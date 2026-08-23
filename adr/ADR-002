@@ -1,0 +1,21 @@
+# ADR-002: Use Jolpica for historical Formula 1 data in Release 1
+
+- Status: Accepted
+- Date: 2026-08-23
+
+## Context
+
+The project requires public Formula 1 data. Live timing would add rate-limit, authentication, latency, and availability concerns that are not required for the first portfolio release.
+
+## Decision
+
+Use the Jolpica F1 API as the Release 1 data source for historical season, race, driver, constructor, and results data. The importer must identify itself with an application user agent and be idempotent.
+
+OpenF1 is deferred as an optional future live-data source.
+
+## Consequences
+
+- Scheduled ingestion is sufficient; no event-streaming stack is needed.
+- The portfolio can focus on repeatable ingestion and operational quality.
+- Source availability and rate limits remain an external dependency; failures must be observable and recoverable.
+- A future live-data feature will require a new ADR and separate cost/security review.
