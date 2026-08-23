@@ -1,0 +1,21 @@
+# ADR-004: Develop locally first and gate AWS provisioning on cost controls
+
+- Status: Accepted
+- Date: 2026-08-23
+
+## Context
+
+Managed Kubernetes and associated cloud networking can create avoidable costs while application and delivery patterns are still changing. A personal portfolio project must make its operating cost visible and controllable.
+
+## Decision
+
+The first functional vertical slice will run locally using Kind or k3d. AWS deployment begins only after a documented monthly budget ceiling, budget alerts, resource-tagging convention, and teardown procedure exist.
+
+Terraform remains the only supported way to create or change cloud resources.
+
+## Consequences
+
+- Early development is cheaper and faster.
+- Local and cloud differences must be documented rather than ignored.
+- Cloud resources may not be created manually for convenience.
+- Cost-management evidence becomes part of the portfolio case study.
