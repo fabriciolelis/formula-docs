@@ -22,7 +22,7 @@ No production infrastructure or application code is created in this sprint.
 - Store normalized data in PostgreSQL.
 - Expose an HTTP API for health, season races, driver standings, constructor standings, and race results.
 - Run the ingestion process as a scheduled Kubernetes workload.
-- Deliver the API to Kubernetes through GitLab CI and Argo CD.
+- Deliver the API to Kubernetes through GitHub Actions and Argo CD.
 - Provision AWS resources using Terraform.
 - Operate the service with metrics, logs, dashboards, alerts, and three service-level objectives.
 
@@ -38,17 +38,17 @@ These are possible future extensions only after Release 1 is complete and docume
 
 ## Planned API
 
-```text
+\`\`\`text
 GET /health
 GET /seasons/{year}/races
 GET /seasons/{year}/standings/drivers
 GET /seasons/{year}/standings/constructors
 GET /seasons/{year}/races/{round}/results
-```
+\`\`\`
 
 ## Architecture direction
 
-```text
+\`\`\`text
 Jolpica F1 API
       |
       v
@@ -60,11 +60,11 @@ PostgreSQL <--- Formula Insights API
                     v
              Kubernetes Service / Ingress
 
-GitLab CI --> container registry --> GitOps repository --> Argo CD --> Kubernetes
-                                         |
-                                         v
-                         Prometheus, Grafana, Loki, Alertmanager
-```
+GitHub Actions --> container registry --> GitOps repository --> Argo CD --> Kubernetes
+                                           |
+                                           v
+                           Prometheus, Grafana, Loki, Alertmanager
+\`\`\`
 
 The initial development environment may run locally with Kind or k3d. Cloud deployment will be designed for AWS, but cloud resources are only created after an explicit cost review in Sprint 1.
 
@@ -85,16 +85,15 @@ These are learning targets, not claims about a public production service.
 - [x] Documentation and ADR conventions are defined.
 - [x] Architecture and data-source decisions have been recorded.
 - [x] First backlog and acceptance criteria exist.
-- [ ] Git repositories created.
-- [ ] Initial issue board created.
+- [x] Git repositories created.
+- [x] Initial GitHub Issues backlog created.
 
-## How to use this package
+## How to use this repository
 
-1. Read `BACKLOG.md` and create the listed work items in GitLab.
-2. Create repositories using `REPOSITORIES.md`.
-3. Copy the ADR templates and conventions into `platform-docs`.
-4. Review every ADR before beginning implementation; change a decision by adding a superseding ADR rather than silently changing course.
-5. Start Sprint 1 only when the remaining Sprint 0 checklist items are complete.
+1. Track work in GitHub Issues.
+2. Record an architectural change with a new or superseding ADR.
+3. Keep diagrams, runbooks, SLOs, postmortems, and reviews in their respective directories.
+4. Start Sprint 1 only after Sprint 0 has been reviewed.
 
 ## Portfolio rule
 
