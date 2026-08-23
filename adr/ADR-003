@@ -1,0 +1,19 @@
+# ADR-003: Use GitOps for Kubernetes delivery
+
+- Status: Accepted
+- Date: 2026-08-23
+
+## Context
+
+The project is intended to demonstrate safe, auditable delivery. A pipeline that has privileged access to a Kubernetes cluster mixes build and deployment concerns and provides weak visibility into deployed desired state.
+
+## Decision
+
+GitLab CI will validate, test, and build application artifacts. It will not apply workloads directly to Kubernetes. A reviewed change in the `platform-gitops` repository will define the desired deployment version. Argo CD will reconcile that repository with the cluster.
+
+## Consequences
+
+- The cluster's intended state is reviewable in version control.
+- CI permissions can be narrower than direct cluster-administration permissions.
+- Delivery requires an additional repository update, which is deliberate evidence of promotion control.
+- Argo CD availability becomes part of the delivery path and must be monitored.
