@@ -1,0 +1,21 @@
+# ADR-001: Start with one Formula 1 workload and a reusable platform boundary
+
+- Status: Accepted
+- Date: 2026-08-23
+
+## Context
+
+The original concept included Formula 1 and football products, live events, analytics, fantasy features, and a broad learning programme. Building all of these at once would obscure the platform work and make it hard to finish a credible portfolio release.
+
+## Decision
+
+Release 1 will serve Formula 1 historical data only. The platform must provide reusable delivery, infrastructure, observability, and security patterns, but it will support only one application initially.
+
+Football Insights is deferred until Formula Insights can be deployed and operated using these shared patterns.
+
+## Consequences
+
+- The first release has a realistic finish line.
+- The project demonstrates platform thinking without pretending to operate a large product organisation.
+- Reuse is tested later by onboarding a second workload instead of predicted in advance.
+- Product features that do not validate platform capability are intentionally excluded.
