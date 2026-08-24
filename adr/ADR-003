@@ -9,7 +9,7 @@ The project is intended to demonstrate safe, auditable delivery. A pipeline that
 
 ## Decision
 
-GitLab CI will validate, test, and build application artifacts. It will not apply workloads directly to Kubernetes. A reviewed change in the `platform-gitops` repository will define the desired deployment version. Argo CD will reconcile that repository with the cluster.
+GitHub Actions will validate, test, and build application artifacts. It will not apply workloads directly to Kubernetes. A reviewed change in the `platform-gitops` repository will define the desired deployment version. Argo CD will reconcile that repository with the cluster.
 
 ## Consequences
 
