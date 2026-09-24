@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-08-23
+- Amendment: 2026-09-24 — budget ceiling and response controls recorded in `runbooks/aws-cost-control.md`.
 
 ## Context
 
@@ -11,6 +12,8 @@ Managed Kubernetes and associated cloud networking can create avoidable costs wh
 
 The first functional vertical slice will run locally using Kind or k3d. AWS deployment begins only after a documented monthly budget ceiling, budget alerts, resource-tagging convention, and teardown procedure exist.
 
+The approved AWS cost ceiling is **USD 20 per calendar month**. The budget owner is Fabricio Lelis. Alerts are required at 50%, 80%, and 100% of that amount. At 100%, nonessential resources must be stopped or destroyed unless further spend is explicitly approved.
+
 Terraform remains the only supported way to create or change cloud resources.
 
 ## Consequences
@@ -19,3 +22,4 @@ Terraform remains the only supported way to create or change cloud resources.
 - Local and cloud differences must be documented rather than ignored.
 - Cloud resources may not be created manually for convenience.
 - Cost-management evidence becomes part of the portfolio case study.
+- AWS provisioning remains blocked until the controls in the linked runbook are implemented and verified.
