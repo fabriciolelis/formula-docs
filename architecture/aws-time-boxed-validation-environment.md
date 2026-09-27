@@ -1,23 +1,26 @@
-# AWS time-boxed validation environment
+# AWS time-boxed three-node K3s validation environment
 
 ## Decision summary
 
 Formula Insights will use AWS only for short, planned validation sessions while
 the monthly cloud-cost ceiling remains USD 20. The normal development
-environment stays local. This AWS design validates Terraform, AWS identity,
-Kubernetes delivery, and teardown practice; it is not a persistent development
-or production environment.
+environment stays local. The AWS lab runs a self-managed, highly available
+three-node K3s control plane on EC2. It validates Terraform, EC2 lifecycle,
+Kubernetes operations, and teardown practice; it is not a persistent
+development or production environment.
 
-A continuously running EKS cluster is explicitly out of scope for this budget.
-Amazon EKS control-plane pricing alone is USD 0.10 per cluster-hour, or roughly
-USD 73 for a 730-hour month before nodes, storage, networking, or databases.
-See the [AWS EKS pricing page](https://aws.amazon.com/eks/pricing/).
+EKS is intentionally excluded from this lab. Its control-plane fee alone would
+consume roughly USD 73 in a 730-hour month before nodes, storage, networking,
+or databases. Three EC2 nodes also exceed the budget if left running, so every
+session must be time-boxed and destroyed.
 
 ## Goals
 
 - Prove that the platform can be created and destroyed reproducibly with
   Terraform.
-- Run one short-lived Kubernetes deployment experiment in AWS.
+- Operate a three-node Kubernetes control plane and observe basic node-failure
+  and scheduling behaviour.
+- Run one short-lived Formula Insights deployment experiment in AWS.
 - Capture operational evidence: a cost check, deployment verification, and
   teardown verification.
 - Keep expected spend below the approved USD 20 monthly ceiling.
@@ -30,7 +33,7 @@ See the [AWS EKS pricing page](https://aws.amazon.com/eks/pricing/).
 - A public internet-facing API, load balancer, NAT gateway, RDS, or
   multi-region topology.
 - A replacement for local Kind/k3d development.
-- A commitment to EKS as the permanent production platform.
+- A commitment to self-managed Kubernetes as the permanent production platform.
 
 ## Architecture
 
@@ -43,11 +46,14 @@ Developer workstation / approved CI identity
                   v
      One AWS region, one short-lived VPC
                   |
-                  v
-       Standard-support EKS control plane
-                  |
-                  v
-   One on-demand managed worker node (min = max = 1)
+        +---------+---------+
+        |         |         |
+        v         v         v
+  EC2 node 1  EC2 node 2  EC2 node 3
+  K3s server  K3s server  K3s server
+        \         |         /
+         \--------+--------/
+          Embedded etcd quorum
                   |
         +---------+----------+
         |                    |
@@ -55,21 +61,38 @@ Developer workstation / approved CI identity
   Formula Insights API   Ephemeral PostgreSQL
         |
         v
-  kubectl port-forward or temporary test access
+  SSM-assisted access / controlled port-forward
 
 Terraform destroy completes the experiment.
 ```
 
-### AWS components
+## K3s topology
+
+All three EC2 instances run K3s server nodes with embedded etcd. This provides
+an odd-numbered etcd quorum: one server loss can be tolerated while two healthy
+servers remain. Workloads may run on the server nodes for this lab; dedicated
+worker nodes are intentionally excluded to control cost.
+
+K3s is bootstrapped on the first node. It generates the cluster join token and
+publishes it to AWS Systems Manager Parameter Store as a SecureString. The
+second and third nodes retrieve the token through narrowly scoped instance-role
+permissions and join the first node. The token must never be committed,
+printed in CI logs, or stored in Terraform state.
+
+## AWS components
 
 | Component | Design choice | Cost and security rationale |
 | --- | --- | --- |
 | Region | One configurable region; default to the closest supported region | Prevents accidental multi-region spend. |
-| VPC | Two public subnets in separate availability zones | EKS-compatible demonstrator topology without NAT gateway cost. |
-| EKS | Standard-support control plane, created only for a scheduled session | Preserves a realistic Kubernetes control plane while avoiding 24/7 cost. |
-| Compute | One on-demand managed node; minimum, desired, and maximum count all set to 1 | No autoscaling surprises or idle node fleet. Instance family and architecture must be selected only after image compatibility is verified. |
+| VPC | Three public subnets across three availability zones and one internet gateway | Supports one node per availability zone without NAT gateway cost. |
+| Compute | Three on-demand EC2 instances of one verified, low-cost instance type | Enables etcd quorum; instances are destroyed after each session. |
+| Storage | One small encrypted root volume per node and K3s local-path storage | Data is disposable and removed with the nodes. |
+| Kubernetes | K3s server on each node, embedded etcd, no dedicated workers | Demonstrates cluster operation without EKS control-plane fees or extra nodes. |
+| Bootstrap secret | SSM Parameter Store SecureString, readable only by the K3s node role | Keeps the join token out of repositories and Terraform state. |
+| Administrative access | AWS Systems Manager Session Manager; no inbound SSH | Avoids a permanent SSH exposure and supports auditable operator access. |
+| Kubernetes API | Port 6443 restricted to the approved operator's current CIDR for the session | Prevents a broadly exposed control plane. |
 | Database | PostgreSQL runs in-cluster with disposable data | Avoids RDS cost and deliberately does not claim durability. |
-| API access | No public Ingress or load balancer; use port-forward or a short-lived controlled test path | Avoids load-balancer cost and unnecessary public exposure. |
+| API access | No public Ingress or load balancer; use controlled port-forward for validation | Avoids load-balancer cost and unnecessary public exposure. |
 | State | Terraform remote state and locking, designed separately in `platform-infrastructure` | State infrastructure must be tracked and costed before use. |
 
 ## Time-box and lifecycle
@@ -77,16 +100,21 @@ Terraform destroy completes the experiment.
 An experiment is an intentional, finite event—not an environment left running.
 
 1. **Plan:** open or link the tracking issue and record the goal, expected
-   duration, region, Terraform environment, and estimated cost.
+   duration, region, Terraform environment, three-node instance type, and
+   estimated cost.
 2. **Preflight:** confirm AWS Budget alerts, required tags, no open cost alert,
-   and a reviewed Terraform plan.
-3. **Create:** apply Terraform and record the start time.
-4. **Validate:** deploy the smallest workload, verify it, and collect the
-   required evidence.
+   a reviewed Terraform plan, and the operator CIDR allowed to reach the
+   Kubernetes API.
+3. **Create:** apply Terraform and record the start time. Confirm that all
+   three K3s servers are Ready and etcd has quorum.
+4. **Validate:** deploy the smallest workload, verify API health and importer
+   completion, and perform one controlled node-loss observation if it fits the
+   session objective.
 5. **Destroy:** run the reviewed Terraform destroy procedure in the same work
    session unless a written exception gives a specific expiry time.
-6. **Verify:** confirm the cluster, nodes, volumes, public IPs, and other
-   billable resources are gone; record the teardown time and estimated cost.
+6. **Verify:** confirm the instances, volumes, public IPs, SSM parameter, and
+   other billable resources are gone; record the teardown time and estimated
+   cost.
 
 Every resource must include these tags where supported:
 
@@ -111,38 +139,44 @@ shutdown mechanism. The operator remains responsible for destruction.
   notifications can lag. Session duration and verified teardown are the primary
   controls.
 - Use the AWS Pricing Calculator before the first apply and whenever the
-  topology changes.
-- Do not introduce NAT gateways, Application Load Balancers, RDS, or persistent
-  worker nodes under this budget without a new cost review.
+  instance type, storage, or topology changes.
+- Do not introduce NAT gateways, Application Load Balancers, RDS, persistent
+  nodes, or additional worker nodes under this budget without a new cost review.
 
 The detailed response to thresholds and teardown procedure lives in
 [`aws-cost-control.md`](../runbooks/aws-cost-control.md).
 
-## Identity and access
+## Identity, network, and operational responsibility
 
 - Terraform and future CI must use short-lived AWS credentials. GitHub Actions
   will use AWS OIDC when cloud automation is introduced; no long-lived AWS keys
   may be stored in a repository.
 - Human access uses a least-privilege AWS identity and MFA.
-- The EKS API endpoint is not exposed broadly. Administrative access is limited
-  to the approved operator or automation identity for the session.
-- Runtime secrets are not stored in Git. The specific secret-management
-  mechanism remains a separate decision before production-like workloads.
+- Security groups permit K3s and etcd traffic only between the three lab nodes.
+  The Kubernetes API is limited to the session operator CIDR; SSH is disabled.
+- Runtime secrets are not stored in Git. The specific workload
+  secret-management mechanism remains a separate decision before
+  production-like workloads.
+- Unlike EKS, this design makes the team responsible for K3s upgrades,
+  operating-system patching, certificate lifecycle, and etcd backup/recovery.
+  Those responsibilities are deliberately part of the learning evidence, but
+  are not claims of production readiness.
 
 ## Required evidence for the first session
 
 - Terraform plan and apply output, with secrets redacted.
 - AWS Budget alert configuration and test-notification evidence.
+- All three K3s servers Ready and etcd-quorum verification.
 - A running workload verification: API health response and importer completion.
 - Resource inventory before destruction.
 - Terraform destroy output and post-destroy verification.
 - A short retrospective with the session duration, actual cost when available,
-  and any resource that survived teardown.
+  node-failure observation, and any resource that survived teardown.
 
 ## Exit criteria
 
 This design is successful when one complete session has created, verified, and
-destroyed the environment within the budget boundary, leaving documented
+destroyed the three-node cluster within the budget boundary, leaving documented
 evidence. It does not authorize a persistent AWS environment. Any move to
-always-on EKS, managed databases, ingress/load balancing, or production
+always-on nodes, managed databases, ingress/load balancing, or production
 availability requires a new cost estimate and explicit budget decision.
