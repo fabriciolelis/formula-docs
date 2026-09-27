@@ -4,7 +4,8 @@
 
 This runbook protects the Formula Insights project from unplanned AWS spend. It
 implements the guardrails required by ADR-004 before any AWS environment is
-provisioned.
+provisioned. The approved environment shape and lifecycle are defined in
+[`aws-time-boxed-validation-environment.md`](../architecture/aws-time-boxed-validation-environment.md).
 
 ## Approved cost boundary
 
@@ -26,10 +27,13 @@ The ceiling is a stop-and-review control, not a target to spend.
 3. Verify that each notification destination receives a test notification.
 4. Ensure Terraform applies the required project, environment, managed-by, and
    owner tags to every supported resource.
-5. Record the AWS account, region, budget identifier, and notification
-   destinations in the implementation pull request. Do not record secrets.
+5. Record the AWS account, region, budget identifier, notification
+   destinations, planned session duration, and expected cost in the
+   implementation pull request. Do not record secrets.
 6. Keep the teardown commands and resource inventory with the relevant Terraform
    environment documentation.
+7. Confirm the proposed infrastructure conforms to the time-boxed validation
+   design. A topology change requires a new cost review.
 
 No Terraform apply may create billable AWS resources until this checklist is
 complete and reviewed.
