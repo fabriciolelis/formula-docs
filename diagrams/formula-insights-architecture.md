@@ -50,7 +50,7 @@ flowchart TB
         aws -. provides .-> manageddb
     end
 
-    docs[formula-docs\nADRs · SLOs · runbooks · reviews]
+    docs[platform-docs\nADRs · SLOs · runbooks · reviews]
     docs -. guides .-> local
     docs -. guides .-> delivery
     docs -. guides .-> foundations
@@ -73,4 +73,4 @@ flowchart TB
 | API, importer, database model, image build | `formula-insights-api` |
 | Kubernetes desired state and approved image versions | `platform-gitops` |
 | Terraform-managed foundations | `platform-infrastructure` |
-| Decisions, SLOs, diagrams, runbooks, reviews | `formula-docs` |
+| Decisions, SLOs, diagrams, runbooks, reviews | `platform-docs` |
