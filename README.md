@@ -38,17 +38,17 @@ These are possible future extensions only after Release 1 is complete and docume
 
 ## Planned API
 
-\`\`\`text
+```text
 GET /health
 GET /seasons/{year}/races
 GET /seasons/{year}/standings/drivers
 GET /seasons/{year}/standings/constructors
 GET /seasons/{year}/races/{round}/results
-\`\`\`
+```
 
 ## Architecture direction
 
-\`\`\`text
+```text
 Jolpica F1 API
       |
       v
@@ -64,7 +64,7 @@ GitHub Actions --> container registry --> GitOps repository --> Argo CD --> Kube
                                            |
                                            v
                            Prometheus, Grafana, Loki, Alertmanager
-\`\`\`
+```
 
 The initial development environment may run locally with Kind or k3d. Cloud deployment will be designed for AWS, but cloud resources are only created after an explicit cost review in Sprint 1.
 
@@ -92,7 +92,7 @@ These are learning targets, not claims about a public production service.
 
 1. Track work in GitHub Issues.
 2. Record an architectural change with a new or superseding ADR.
-3. Keep diagrams, runbooks, SLOs, postmortems, and reviews in their respective directories.
+3. Keep architecture designs, diagrams, runbooks, and reviews in their respective directories. SLOs are defined in this README. Create a `postmortems/` directory with the first postmortem.
 4. Start Sprint 1 only after Sprint 0 has been reviewed.
 
 ## Portfolio rule
