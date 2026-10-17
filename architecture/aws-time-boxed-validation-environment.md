@@ -120,7 +120,7 @@ Every resource must include these tags where supported:
 
 ```text
 project = formula-insights
-environment = aws-lab
+environment = dev
 managed-by = terraform
 owner = fabricio
 expires-at = ISO-8601 timestamp
