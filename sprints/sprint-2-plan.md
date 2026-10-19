@@ -21,7 +21,8 @@ part of Sprint 2.
 | 1 | Throttle Jolpica requests | formula-insights-api#16 | At most 1 request per second and 450 per rolling hour, shared across a run; tests without real sleeps; a `429` still fails the run (ADR-006). |
 | 2 | Publish the image | formula-insights-api#17 | Every push to `main` that passes all checks pushes the scanned image to GHCR, tagged with the full commit SHA (no `latest`), with an SBOM and a build provenance attestation; pull requests never push. |
 | 3 | Database migrations | platform-docs#9, formula-insights-api#18 | ADR-007 records the migration tool, who runs migrations, and their order relative to deployment; a baseline migration replaces `create_all`; CI applies the migrations to PostgreSQL. |
-| 4 | Sprint 2 review | — | `reviews/sprint-2-review.md` with evidence for each exit criterion. |
+| 4 | Docstrings | formula-insights-api#19 | Google-style docstrings for all public code in `app/`, enforced by ruff in CI; no behavior changes. |
+| 5 | Sprint 2 review | — | `reviews/sprint-2-review.md` with evidence for each exit criterion. |
 
 ## Out of scope
 
