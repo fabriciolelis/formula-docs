@@ -95,10 +95,10 @@ These are learning targets, not claims about a public production service.
 
 ## How to use this repository
 
-1. Track work in GitHub Issues.
+1. Track work in GitHub Issues, grouped by a milestone for each sprint.
 2. Record an architectural change with a new or superseding ADR.
-3. Keep architecture designs, diagrams, runbooks, and reviews in their respective directories. SLOs are defined in this README. Create a `postmortems/` directory with the first postmortem.
-4. Start Sprint 1 only after Sprint 0 has been reviewed.
+3. Keep architecture designs, diagrams, runbooks, sprint plans, and reviews in their respective directories. SLOs are defined in this README. Create a `postmortems/` directory with the first postmortem.
+4. Start each sprint with a plan in `sprints/` and close it with a review in `reviews/`; the next sprint starts only after the previous review is merged.
 
 ## Portfolio rule
 
