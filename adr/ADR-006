@@ -1,0 +1,28 @@
+# ADR-006: Ingestion policy for the Jolpica dependency
+
+- Status: Accepted
+- Date: 2026-10-18
+
+## Context
+
+Jolpica is a free community service. Unauthenticated access allows a burst of 4 requests per second and a sustained 500 requests per hour; going over returns `HTTP 429`, and the limits are expected to decrease. Jolpica asks clients to cache results and use season-wide, offset-paginated queries.
+
+Importing one season takes about 8 requests (races, paginated results, driver and constructor standings). A full historical backfill from 1950 is roughly 400–600 requests, close to or above the hourly limit. ADR-002 already requires the importer to identify itself and to be idempotent.
+
+## Decision
+
+- **Pagination:** season-wide endpoints with offset pagination at Jolpica's maximum page size of 100. The total must stay the same across pages, and the rows received must equal the total, or the import fails (formula-insights-api#5, #14).
+- **Pacing:** the client throttles itself to at most 1 request per second and no more than 450 requests per rolling hour, leaving headroom under both limits.
+- **Retries:** the client does not retry. Any upstream error, including `429`, fails the run with a non-zero exit code and a reason. Retries happen at job level: a limited number of Kubernetes CronJob retries, then the next scheduled run.
+- **Scope and caching:** historical seasons are imported once by a manual, paced backfill and are treated as final. The scheduled run refreshes only the current season. The database is the cache; there is no HTTP response cache. A late correction to a past season requires a manual re-import.
+- **Schedule:** the incremental refresh runs once a day.
+- **Failure visibility:** every failed or partial run exits non-zero with its reason, including standings kept because they were incomplete or from another round. The ingestion signals that feed the SLOs and alerts are defined in platform-docs#10.
+- **Deterministic tests:** tests use recorded Jolpica responses (`tests/fixtures/jolpica`) and never call the network in CI. A recorder script refreshes the fixtures.
+
+## Consequences
+
+- Normal operation is about 8 requests a day, far below the limits, which respects a shared free service.
+- A full backfill takes more than an hour by design; its target is 3 hours, and it is not an SLO.
+- A single transient error fails the whole daily run. This is accepted for simplicity and visibility: the failure is reported and retried at job level, and the ingestion success-rate SLO tolerates one failed day in 30.
+- Corrections to past seasons are not picked up automatically.
+- The throttle is not implemented yet; the client currently sends requests without pacing. Implementing it is required before unattended scheduled ingestion.

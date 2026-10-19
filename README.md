@@ -24,7 +24,7 @@ No production infrastructure or application code is created in this sprint.
 - Run the ingestion process as a scheduled Kubernetes workload.
 - Deliver the API to Kubernetes through GitHub Actions and Argo CD.
 - Provision AWS resources using Terraform.
-- Operate the service with metrics, logs, dashboards, alerts, and three service-level objectives.
+- Operate the service with metrics, logs, dashboards, alerts, and four service-level objectives.
 
 ## Explicitly out of scope
 
@@ -72,9 +72,14 @@ The initial development environment may run locally with Kind or k3d. Cloud depl
 
 | Objective | Target | Measurement |
 | --- | --- | --- |
-| API availability | 99.5% per 30 days | successful probe requests / all probe requests |
+| API availability | 99.5% per 30 days | successful probe requests / all probe requests, from a synthetic probe calling the readiness endpoint (including the database) every 30 seconds; the share of non-5xx responses in the API's request metrics is a secondary signal |
 | API latency | 95% of read requests below 500 ms | API request-duration histogram |
-| Data freshness | scheduled data import completes within 30 minutes | ingestion completion timestamp |
+| Ingestion success rate | at least 96% of scheduled daily runs per 30 days (29 of 30) | job exit status; any non-zero exit, including standings not updated, counts as failed |
+| Incremental refresh duration | a scheduled run completes within 30 minutes | run start and completion timestamps |
+
+The historical backfill has a target, not an SLO: a full backfill from 1950
+completes within 3 hours while paced under Jolpica's rate limits. It is run
+manually and does not alert. See ADR-006 for the ingestion policy.
 
 These are learning targets, not claims about a public production service.
 
