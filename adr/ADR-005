@@ -1,0 +1,25 @@
+# ADR-005: Use Python, FastAPI, and SQLAlchemy for the Formula Insights API
+
+- Status: Accepted
+- Date: 2026-10-18 (the decision was taken at the start of Sprint 1, formula-insights-api#2)
+
+## Context
+
+Release 1 needs a small read-only HTTP API and a scheduled importer that reads Jolpica and writes to PostgreSQL. Traffic is low and the dataset is small, so developer speed, library maturity, and testability matter more than raw throughput. The same code should serve the API and run the importer, so the data model and upstream client exist once.
+
+## Decision
+
+- Python 3.12 for the API and the importer, in one codebase and one container image; the importer runs as a CLI (`python -m app.cli <season>`).
+- FastAPI and uvicorn for HTTP.
+- SQLAlchemy 2 with psycopg 3 for PostgreSQL.
+- httpx for the Jolpica client.
+- uv for dependency management, with versions locked in `uv.lock` for reproducible builds.
+
+## Consequences
+
+- Fast iteration: typed request handling, automatic OpenAPI documentation, and a mature ORM keep the code small.
+- The API and the importer share models and the upstream client, so a schema change happens in one place.
+- Throughput and memory use are higher-cost than a compiled runtime such as Go; that is acceptable at Release 1 scale.
+- The container image carries a Python runtime and is larger than a static binary, and the base image brings OS vulnerabilities that must be scanned and triaged (see `.trivyignore`).
+- Type annotations are not enforced at runtime; correctness relies on tests and static analysis.
+- The schema is created with SQLAlchemy `create_all`, which only adds missing tables. A migration strategy is required before the first persistent or GitOps-managed environment (platform-docs#9).
