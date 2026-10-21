@@ -26,3 +26,4 @@ Importing one season takes about 8 requests (races, paginated results, driver an
 - A single transient error fails the whole daily run. This is accepted for simplicity and visibility: the failure is reported and retried at job level, and the ingestion success-rate SLO tolerates one failed day in 30.
 - Corrections to past seasons are not picked up automatically.
 - The throttle is not implemented yet; the client currently sends requests without pacing. Implementing it is required before unattended scheduled ingestion.
+  - *Update 2026-10-21:* implemented in formula-insights-api#21 with pyrate-limiter. The client waits for capacity instead of failing. Pacing lives in memory and is shared by every season of one command, so a backfill must run as a single season range (`python -m app.cli 1950 2024`), not one command per season.
